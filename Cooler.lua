@@ -1,8 +1,11 @@
 -- CxzDev Ultra Optimizer
--- Cooling • FPS • Ping • Smart Mode
--- Rayfield UI | No Key | Mobile Friendly
+-- SAME FEATURE & STRUCTURE
+-- GUI : Fluent UI
+-- No Key | Mobile Friendly
 
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local Fluent = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"
+))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -13,28 +16,194 @@ local player = Players.LocalPlayer
 -------------------------------------------------
 -- WINDOW
 -------------------------------------------------
-local Window = Rayfield:CreateWindow({
-   Name = "Cxz Ultra Optimizer",
-   LoadingTitle = "CxzDev",
-   LoadingSubtitle = "Cooling • FPS • Ping",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "CxzOptimizer",
-      FileName = "Config"
-   },
-   KeySystem = false
+local Window = Fluent:CreateWindow({
+    Title = "Cxz Ultra Optimizer",
+    SubTitle = "Cooling • FPS • Ping",
+    Size = UDim2.fromOffset(520, 440),
+    Acrylic = true,
+    Theme = "Light"
 })
 
-local CoolingTab = Window:CreateTab("Cooling", 4483362458)
-local FpsTab     = Window:CreateTab("FPS Cap", 4483362458)
-local PingTab    = Window:CreateTab("Ping Optimizer", 4483362458)
-local AfkTab     = Window:CreateTab("AFK", 4483362458)
+local CoolingTab = Window:AddTab({ Title = "Cooling" })
+local FpsTab     = Window:AddTab({ Title = "FPS Cap" })
+local PingTab    = Window:AddTab({ Title = "Ping Optimizer" })
+local AfkTab     = Window:AddTab({ Title = "AFK" })
 
 -------------------------------------------------
--- CORE COOLING
+-- CORE COOLING (SAMA)
 -------------------------------------------------
 local function optimize(level)
-	for _,v in pairs(workspace:GetDescendants()) do
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter")
+        or v:IsA("Trail")
+        or v:IsA("Smoke")
+        or v:IsA("Fire") then
+            v.Enabled = false
+        end
+
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+            if level >= 2 then
+                v.CastShadow = false
+            end
+        end
+    end
+
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.EnvironmentSpecularScale = 0
+end
+
+-------------------------------------------------
+-- COOLING MODES (SAMA)
+-------------------------------------------------
+CoolingTab:AddButton({
+    Title = "🟢 Light Cooling",
+    Callback = function()
+        optimize(1)
+        pcall(function() setfpscap(45) end)
+    end
+})
+
+CoolingTab:AddButton({
+    Title = "🟡 Balanced Cooling",
+    Callback = function()
+        optimize(2)
+        pcall(function() setfpscap(30) end)
+    end
+})
+
+CoolingTab:AddButton({
+    Title = "🔴 Extreme Cooling",
+    Callback = function()
+        optimize(3)
+        pcall(function() setfpscap(15) end)
+    end
+})
+
+CoolingTab:AddButton({
+    Title = "⚠ Emergency Mode (MAX SAFE)",
+    Callback = function()
+        pcall(function() setfpscap(10) end)
+    end
+})
+
+-------------------------------------------------
+-- FPS CAP SELECTOR (SAMA)
+-------------------------------------------------
+FpsTab:AddDropdown("FPSCAP", {
+    Title = "FPS Cap Selector",
+    Values = {
+        "10 (recommended for cooling)",
+        "20 (recommended)",
+        "30 (recommended)",
+        "40",
+        "50",
+        "60",
+        "90",
+        "120",
+        "144",
+        "240"
+    },
+    Default = "30 (recommended)",
+    Callback = function(Value)
+        local fps = tonumber(Value:match("%d+"))
+        if fps then
+            pcall(function() setfpscap(fps) end)
+        end
+    end
+})
+
+-------------------------------------------------
+-- PING OPTIMIZER (TOGGLE SLIDER)
+-------------------------------------------------
+local PingOptimized = false
+
+PingTab:AddToggle("PingOpt", {
+    Title = "⚡ Ping Optimizer",
+    Default = false,
+    Callback = function(Value)
+        PingOptimized = Value
+
+        if Value then
+            pcall(function()
+                settings().Network.IncomingReplicationLag = 0
+            end)
+        else
+            pcall(function()
+                settings().Network.IncomingReplicationLag = 0.1
+            end)
+        end
+    end
+})
+
+-------------------------------------------------
+-- SMART MODE (AUTO COOLING) SAMA
+-------------------------------------------------
+local SmartMode = false
+local lastPos = nil
+local idleTime = 0
+
+PingTab:AddToggle("SmartMode", {
+    Title = "🧠 Smart Mode (Auto Cooling)",
+    Default = false,
+    Callback = function(v)
+        SmartMode = v
+    end
+})
+
+RunService.Heartbeat:Connect(function(dt)
+    if not SmartMode
+    or not player.Character
+    or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    local hrp = player.Character.HumanoidRootPart
+
+    if lastPos then
+        if (hrp.Position - lastPos).Magnitude < 0.1 then
+            idleTime += dt
+            if idleTime > 5 then
+                pcall(function() setfpscap(15) end)
+            end
+        else
+            idleTime = 0
+            pcall(function() setfpscap(30) end)
+        end
+    end
+
+    lastPos = hrp.Position
+end)
+
+-------------------------------------------------
+-- ANTI AFK (SAMA)
+-------------------------------------------------
+local AntiAFK = false
+
+AfkTab:AddToggle("AFK", {
+    Title = "Anti AFK",
+    Default = false,
+    Callback = function(v)
+        AntiAFK = v
+    end
+})
+
+RunService.RenderStepped:Connect(function()
+    if AntiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end)
+
+-------------------------------------------------
+Fluent:Notify({
+    Title = "Cxz Ultra Optimizer",
+    Content = "Loaded • Same Feature • New GUI",
+    Duration = 4
+})	for _,v in pairs(workspace:GetDescendants()) do
 		if v:IsA("ParticleEmitter") or v:IsA("Trail")
 		or v:IsA("Smoke") or v:IsA("Fire") then
 			v.Enabled = false
