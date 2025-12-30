@@ -1,7 +1,7 @@
--- CxzDev Ultra Cooling & AFK + FPS Selector
+-- CxzDev Ultra Optimizer
+-- Cooling • FPS • Ping • Smart Mode
 -- Rayfield UI | No Key | Mobile Friendly
 
--- Rayfield Loader
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
@@ -10,31 +10,218 @@ local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
 
--- Window
+-------------------------------------------------
+-- WINDOW
+-------------------------------------------------
 local Window = Rayfield:CreateWindow({
-   Name = "Cxz Ultra Cooling",
+   Name = "Cxz Ultra Optimizer",
    LoadingTitle = "CxzDev",
-   LoadingSubtitle = "Performance Script",
+   LoadingSubtitle = "Cooling • FPS • Ping",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "CxzCooling",
+      FolderName = "CxzOptimizer",
       FileName = "Config"
    },
-   Discord = { Enabled = false },
    KeySystem = false
 })
 
--- Tabs
-local MainTab = Window:CreateTab("Cooling / FPS", 4483362458)
-local AfkTab = Window:CreateTab("AFK", 4483362458)
+local CoolingTab = Window:CreateTab("Cooling", 4483362458)
+local FpsTab     = Window:CreateTab("FPS Cap", 4483362458)
+local PingTab    = Window:CreateTab("Ping Optimizer", 4483362458)
+local AfkTab     = Window:CreateTab("AFK", 4483362458)
 
 -------------------------------------------------
--- CORE OPTIMIZATION FUNCTION
+-- CORE COOLING
 -------------------------------------------------
 local function optimize(level)
 	for _,v in pairs(workspace:GetDescendants()) do
 		if v:IsA("ParticleEmitter") or v:IsA("Trail")
 		or v:IsA("Smoke") or v:IsA("Fire") then
+			v.Enabled = false
+		end
+
+		if v:IsA("BasePart") then
+			v.Material = Enum.Material.Plastic
+			v.Reflectance = 0
+			if level >= 2 then
+				v.CastShadow = false
+			end
+		end
+	end
+
+	Lighting.GlobalShadows = false
+	Lighting.Brightness = 1
+	Lighting.EnvironmentDiffuseScale = 0
+	Lighting.EnvironmentSpecularScale = 0
+end
+
+-------------------------------------------------
+-- COOLING MODES
+-------------------------------------------------
+CoolingTab:CreateButton({
+	Name = "🟢 Light Cooling",
+	Callback = function()
+		optimize(1)
+		pcall(function() setfpscap(45) end)
+	end
+})
+
+CoolingTab:CreateButton({
+	Name = "🟡 Balanced Cooling",
+	Callback = function()
+		optimize(2)
+		pcall(function()
+			setfpscap(30)
+			RunService:Set3dRenderingEnabled(true)
+		end)
+	end
+})
+
+CoolingTab:CreateButton({
+	Name = "🔴 Extreme Cooling",
+	Callback = function()
+		optimize(3)
+		pcall(function()
+			setfpscap(15)
+			RunService:Set3dRenderingEnabled(false)
+		end)
+	end
+})
+
+-------------------------------------------------
+-- FPS CAP SELECTOR
+-------------------------------------------------
+FpsTab:CreateDropdown({
+	Name = "FPS Cap Selector",
+	Options = {
+		"10 (Max Cooling)",
+		"20 (Very Cool)",
+		"30 (Recommended)",
+		"40",
+		"50",
+		"60",
+		"90",
+		"120",
+		"144",
+		"240"
+	},
+	CurrentOption = "30 (Recommended)",
+	Callback = function(Value)
+		local fps = tonumber(Value:match("%d+"))
+		if fps then
+			pcall(function() setfpscap(fps) end)
+		end
+	end
+})
+
+-------------------------------------------------
+-- PING OPTIMIZER (TOGGLE)
+-------------------------------------------------
+local PingOptimized = false
+
+PingTab:CreateToggle({
+	Name = "⚡ Ping Optimizer",
+	CurrentValue = false,
+	Callback = function(Value)
+		PingOptimized = Value
+
+		if Value then
+			pcall(function()
+				local ns = settings():GetService("NetworkSettings")
+				ns.IncomingReplicationLag = 0
+				ns.PhysicsSendRate = 1
+				ns.DataSendRate = 1
+			end)
+
+			pcall(function()
+				sethiddenproperty(player, "SimulationRadius", math.huge)
+				sethiddenproperty(player, "MaxSimulationRadius", math.huge)
+			end)
+		else
+			pcall(function()
+				local ns = settings():GetService("NetworkSettings")
+				ns.IncomingReplicationLag = 0.1
+				ns.PhysicsSendRate = 30
+				ns.DataSendRate = 30
+			end)
+		end
+	end
+})
+
+-------------------------------------------------
+-- SMART MODE (AUTO COOLING)
+-------------------------------------------------
+local SmartMode = false
+local lastPos = nil
+local idleTime = 0
+
+PingTab:CreateToggle({
+	Name = "🧠 Smart Mode (Auto Cooling)",
+	CurrentValue = false,
+	Callback = function(Value)
+		SmartMode = Value
+	end
+})
+
+RunService.Heartbeat:Connect(function(dt)
+	if not SmartMode or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+		return
+	end
+
+	local hrp = player.Character.HumanoidRootPart
+	if lastPos then
+		if (hrp.Position - lastPos).Magnitude < 0.1 then
+			idleTime += dt
+			if idleTime > 5 then
+				pcall(function()
+					setfpscap(15)
+					RunService:Set3dRenderingEnabled(false)
+				end)
+			end
+		else
+			idleTime = 0
+			pcall(function()
+				setfpscap(30)
+				RunService:Set3dRenderingEnabled(true)
+			end)
+		end
+	end
+
+	lastPos = hrp.Position
+end)
+
+-------------------------------------------------
+-- ANTI AFK
+-------------------------------------------------
+local AntiAFK = false
+
+AfkTab:CreateToggle({
+	Name = "Anti AFK",
+	CurrentValue = false,
+	Callback = function(v)
+		AntiAFK = v
+	end
+})
+
+RunService.RenderStepped:Connect(function()
+	if AntiAFK then
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
+	end
+end)
+
+-------------------------------------------------
+-- EMERGENCY MODE
+-------------------------------------------------
+CoolingTab:CreateButton({
+	Name = "⚠️ Emergency Mode (MAX SAFE)",
+	Callback = function()
+		pcall(function()
+			setfpscap(10)
+			RunService:Set3dRenderingEnabled(false)
+		end)
+	end
+})		or v:IsA("Smoke") or v:IsA("Fire") then
 			v.Enabled = false
 		end
 
